@@ -53,6 +53,50 @@
       backdrop-filter: blur(8px);
       border: 1px solid rgba(255,255,255,0.1);
     }
+    .shot-list {
+      position: absolute;
+      top: 65px;
+      left: 20px;
+      background: rgba(20, 20, 20, 0.85);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-family: monospace;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.1);
+      max-height: calc(100vh - 2*65px);
+      overflow-y: auto;
+      min-width: 130px;
+    }
+    .shot-list .shot-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2px 0;
+      gap: 8px;
+    }
+    .shot-list .shot-row span:nth-child(1) {
+      text-align: left;
+      min-width: 30px;
+    }
+    .shot-list .shot-row span:nth-child(2) {
+      text-align: right;
+      min-width: 40px;
+    }
+    .shot-list .shot-row span:nth-child(3) {
+      text-align: right;
+      min-width: 20px;
+    }
+    .shot-list .shot-row.total {
+      border-top: 1px solid rgba(255,255,255,0.2);
+      margin-top: 4px;
+      padding-top: 4px;
+      font-weight: bold;
+    }
+    .shot-list.hidden {
+      display: none;
+    }
     .hint {
       position: absolute;
       top: 65px;
@@ -96,11 +140,12 @@
 <body>
   <div class="app-wrapper">
     <div class="ui-overlay">
-      <div class="status">Shots: <span id="shotCount">0</span></div>
+      <div class="shot-list" id="shotList"></div>
       <div class="hint">Tap to mark • Button to zoom</div>
       <div class="controls">
         <button id="zoomBtn" class="primary">Punch In (7-Ring)</button>
         <button id="clearBtn">Clear Shots</button>
+        <button id="toggleListBtn">Hide List</button>
       </div>
     </div>
     <svg id="target" viewBox="0 0 550 550" xmlns="http://www.w3.org/2000/svg">
@@ -174,12 +219,14 @@
 
   <script>
     const svg = document.getElementById('target');
-    const shotCountEl = document.getElementById('shotCount');
+    const shotListEl = document.getElementById('shotList');
     const zoomBtn = document.getElementById('zoomBtn');
     const clearBtn = document.getElementById('clearBtn');
+    const toggleListBtn = document.getElementById('toggleListBtn');
+    
+    let listVisible = true;
     
     const MARKERS = [];
-    let shotCount = 0;
     let isZoomed = true;
     let draggingMarker = null;
     let dragOffsetX = 0;
@@ -227,6 +274,52 @@
       if (previewCross) {
         previewCross.setAttribute('opacity', '0.5');
       }
+    }
+
+    function updateShotList() {
+      let total = 0;
+      let intTotal = 0;
+      let blockTotal = 0;
+      let blockIntTotal = 0;
+      let html = '';
+      MARKERS.forEach((group, i) => {
+        const circle = group.querySelector('.marker-circle');
+        const cx = parseFloat(circle.getAttribute('cx'));
+        const cy = parseFloat(circle.getAttribute('cy'));
+        const dx = cx - 275;
+        const dy = cy - 275;
+        const d = Math.sqrt(dx * dx + dy * dy) - 2.75;
+        const score = calcScoreForDist(d);
+        const intScore = Math.floor(score);
+        total += score;
+        intTotal += intScore;
+        blockTotal += score;
+        blockIntTotal += intScore;
+        html += `<div class="shot-row"><span>${i + 1}.</span><span>${score.toFixed(1)}</span><span>${intScore}</span></div>`;
+        if ((i + 1) % 10 === 0) {
+          html += `<div class="shot-row total"><span></span><span>${blockTotal.toFixed(1)}</span><span>${blockIntTotal}</span></div>`;
+          blockTotal = 0;
+          blockIntTotal = 0;
+        }
+      });
+      html += `<div class="shot-row total"><span>TOTAL</span><span>${total.toFixed(1)}</span><span>${intTotal}</span></div>`;
+      shotListEl.innerHTML = html;
+      shotListEl.scrollTop = shotListEl.scrollHeight;
+    }
+
+    function calcScoreForDist(d) {
+      if (d <= 0) return 10.9;
+      if (d <= 25) return +(10.9 - (d + 2.75) / 27.75 * 0.9).toFixed(1);
+      if (d <= 50) return +(9.9 - (d - 25) / 25 * 0.9).toFixed(1);
+      if (d <= 75) return +(8.9 - (d - 50) / 25 * 0.9).toFixed(1);
+      if (d <= 100) return +(7.9 - (d - 75) / 25 * 0.9).toFixed(1);
+      if (d <= 125) return +(6.9 - (d - 100) / 25 * 0.9).toFixed(1);
+      if (d <= 150) return +(5.9 - (d - 125) / 25 * 0.9).toFixed(1);
+      if (d <= 175) return +(4.9 - (d - 150) / 25 * 0.9).toFixed(1);
+      if (d <= 200) return +(3.9 - (d - 175) / 25 * 0.9).toFixed(1);
+      if (d <= 225) return +(2.9 - (d - 200) / 25 * 0.9).toFixed(1);
+      if (d <= 250) return +(1.9 - (d - 225) / 25 * 0.9).toFixed(1);
+      return 0;
     }
 
     function getSVGPoint(event) {
@@ -285,15 +378,14 @@
       text.setAttribute("font-weight", "bold");
       text.setAttribute("fill", "#ff1a1a");
       text.setAttribute("class", "marker-number");
-      text.textContent = shotCount + 1;
+      text.textContent = MARKERS.length + 1;
       
       group.appendChild(circle);
       group.appendChild(text);
       svg.appendChild(group);
       
-      shotCount++;
-      shotCountEl.textContent = shotCount;
       MARKERS.push(group);
+      updateShotList();
       return group;
     }
 
@@ -356,6 +448,7 @@
       const score = calcScore(cx, cy);
       numberText.textContent = score;
       updatePreviewCross(cx, cy);
+      updateShotList();
     }
 
     function onPointerUp(e) {
@@ -371,6 +464,7 @@
         group.classList.remove('dragging');
         draggingMarker = null;
         hidePreviewCross();
+        updateShotList();
       }
     }
 
@@ -384,11 +478,16 @@
     clearBtn.addEventListener('pointerup', () => {
       MARKERS.forEach(m => m.remove());
       MARKERS.length = 0;
-      shotCount = 0;
-      shotCountEl.textContent = 0;
+      shotListEl.innerHTML = '';
     });
 
     zoomBtn.addEventListener('pointerup', toggleZoom);
+
+    toggleListBtn.addEventListener('pointerup', () => {
+      listVisible = !listVisible;
+      shotListEl.classList.toggle('hidden', !listVisible);
+      toggleListBtn.textContent = listVisible ? 'Hide List' : 'Show List';
+    });
 
     applyZoom();
     createPreviewCross();
