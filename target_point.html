@@ -206,19 +206,7 @@
 
     function getTouchOffset(e) {
       if (!e.touches || e.touches.length === 0) return { x: 0, y: 0 };
-      const ctm = svg.getScreenCTM().inverse();
-      const pt = svg.createSVGPoint();
-      pt.x = e.touches[0].clientX - 20;
-      pt.y = e.touches[0].clientY - 40;
-      const off = pt.matrixTransform(ctm);
-      pt.x = e.touches[0].clientX;
-      pt.y = e.touches[0].clientY;
-      const center = pt.matrixTransform(ctm);
-      let scale = 1;
-      const computed = window.getComputedStyle(svg);
-      const matrix = new DOMMatrix(computed.transform);
-      if (matrix.a !== 1) scale = matrix.a;
-      return { x: (off.x - center.x) / scale, y: (off.y - center.y) / scale };
+      return { x: -10 / (isZoomed ? 2.75 : 1), y: -10 / (isZoomed ? 2.75 : 1) };
     }
 
     function calcScore(x, y) {
