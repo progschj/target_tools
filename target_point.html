@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ISSF 25m Target with Punch-In</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #121212;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      font-family: system-ui, -apple-system, sans-serif;
+      touch-action: none;
+    }
+    .app-wrapper {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #target {
+      width: 100%;
+      height: auto;
+      max-width: 100vw;
+      max-height: 100vh;
+      cursor: crosshair;
+      transition: transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
+      transform-origin: center center;
+      transform-box: fill-box;
+      background: #f5f5f5;
+    }
+    .ui-overlay {
+      position: absolute;
+      pointer-events: none;
+      z-index: 10;
+      width: 100%;
+      height: 100%;
+      top: 0; left: 0;
+    }
+    .status {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(20, 20, 20, 0.85);
+      color: #fff;
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .hint {
+      position: absolute;
+      top: 65px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #888;
+      font-size: 12px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .controls {
+      position: absolute;
+      bottom: 25px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 12px;
+      pointer-events: auto;
+    }
+    button {
+      padding: 11px 18px;
+      border: none;
+      border-radius: 10px;
+      background: rgba(40, 40, 40, 0.9);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.15);
+      transition: all 0.2s;
+      user-select: none;
+    }
+    button:hover { background: rgba(60, 60, 60, 0.95); }
+    button:active { transform: scale(0.96); }
+    button.primary { background: rgba(0, 100, 255, 0.85); border-color: rgba(0, 100, 255, 0.6); }
+    button.primary:hover { background: rgba(0, 80, 200, 0.95); }
+    .shot-marker { pointer-events: none; }
+  </style>
+</head>
+<body>
+  <div class="app-wrapper">
+    <div class="ui-overlay">
+      <div class="status">Shots: <span id="shotCount">0</span></div>
+      <div class="hint">Tap to mark • Double-tap or button to zoom</div>
+      <div class="controls">
+        <button id="zoomBtn" class="primary">Punch In (7-Ring)</button>
+        <button id="clearBtn">Clear Shots</button>
+      </div>
+    </div>
+    <svg id="target" viewBox="0 0 550 550" xmlns="http://www.w3.org/2000/svg">
+      <rect width="550" height="550" fill="#FFFFFF"/>
+      <circle cx="275" cy="275" r="100" fill="#000000"/>
+      <g transform="translate(275, 275)">
+        <circle r="250" fill="none" stroke="#000000" stroke-width="0.3"/>
+        <circle r="225" fill="none" stroke="#000000" stroke-width="0.3"/>
+        <circle r="200" fill="none" stroke="#000000" stroke-width="0.3"/>
+        <circle r="175" fill="none" stroke="#000000" stroke-width="0.3"/>
+        <circle r="150" fill="none" stroke="#000000" stroke-width="0.3"/>
+        <circle r="125" fill="none" stroke="#000000" stroke-width="0.3"/>
+        <circle r="100" fill="none" stroke="#000000" stroke-width="0.3"/>
+        <circle r="75" fill="none" stroke="#FFFFFF" stroke-width="0.3"/>
+        <circle r="50" fill="none" stroke="#FFFFFF" stroke-width="0.3"/>
+        <circle r="25" fill="none" stroke="#FFFFFF" stroke-width="0.3"/>
+        <circle r="12.5" fill="none" stroke="#FFFFFF" stroke-width="0.3"/>
+
+        <!-- 12 o'clock -->
+        <text x="0" y="-37.5" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">9</text>
+        <text x="0" y="-62.5" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">8</text>
+        <text x="0" y="-87.5" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">7</text>
+        <text x="0" y="-112.5" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">6</text>
+        <text x="0" y="-137.5" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">5</text>
+        <text x="0" y="-162.5" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">4</text>
+        <text x="0" y="-187.5" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">3</text>
+        <text x="0" y="-212.5" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">2</text>
+        <text x="0" y="-237.5" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">1</text>
+
+        <!-- 3 o'clock -->
+        <text x="37.5" y="0" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">9</text>
+        <text x="62.5" y="0" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">8</text>
+        <text x="87.5" y="0" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">7</text>
+        <text x="112.5" y="0" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">6</text>
+        <text x="137.5" y="0" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">5</text>
+        <text x="162.5" y="0" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">4</text>
+        <text x="187.5" y="0" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">3</text>
+        <text x="212.5" y="0" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">2</text>
+        <text x="237.5" y="0" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">1</text>
+
+        <!-- 6 o'clock -->
+        <text x="0" y="37.5" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">9</text>
+        <text x="0" y="62.5" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">8</text>
+        <text x="0" y="87.5" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">7</text>
+        <text x="0" y="112.5" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">6</text>
+        <text x="0" y="137.5" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">5</text>
+        <text x="0" y="162.5" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">4</text>
+        <text x="0" y="187.5" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">3</text>
+        <text x="0" y="212.5" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">2</text>
+        <text x="0" y="237.5" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">1</text>
+
+        <!-- 9 o'clock -->
+        <text x="-37.5" y="0" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">9</text>
+        <text x="-62.5" y="0" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">8</text>
+        <text x="-87.5" y="0" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">7</text>
+        <text x="-112.5" y="0" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">6</text>
+        <text x="-137.5" y="0" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">5</text>
+        <text x="-162.5" y="0" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">4</text>
+        <text x="-187.5" y="0" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">3</text>
+        <text x="-212.5" y="0" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">2</text>
+        <text x="-237.5" y="0" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">1</text>
+      </g>
+      <g stroke="#FF0000" stroke-width="0.8" fill="none">
+        <line x1="270" y1="15" x2="280" y2="15"/><line x1="275" y1="10" x2="275" y2="20"/>
+        <line x1="270" y1="535" x2="280" y2="535"/><line x1="275" y1="530" x2="275" y2="540"/>
+        <line x1="15" y1="270" x2="15" y2="280"/><line x1="10" y1="275" x2="20" y2="275"/>
+        <line x1="535" y1="270" x2="535" y2="280"/><line x1="530" y1="275" x2="540" y2="275"/>
+      </g>
+    </svg>
+  </div>
+
+  <script>
+    const svg = document.getElementById('target');
+    const shotCountEl = document.getElementById('shotCount');
+    const zoomBtn = document.getElementById('zoomBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    
+    let shotCount = 0;
+    let isZoomed = false;
+    let lastTap = 0;
+
+    // Robust coordinate mapping using SVG's native transformation matrix
+    function getSVGPoint(event) {
+      const point = svg.createSVGPoint();
+      let clientX, clientY;
+      if (event.touches && event.touches.length > 0) {
+        clientX = event.touches[0].clientX;
+        clientY = event.touches[0].clientY;
+      } else {
+        clientX = event.clientX;
+        clientY = event.clientY;
+      }
+      point.x = clientX;
+      point.y = clientY;
+      
+      // Get the combined matrix (viewBox + CSS transforms + screen DPI)
+      const ctm = svg.getScreenCTM().inverse();
+      return point.matrixTransform(ctm);
+    }
+
+    function addCross(x, y) {
+      const crossGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      crossGroup.setAttribute("class", "shot-marker");
+      
+      const line1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line1.setAttribute("x1", x - 6); line1.setAttribute("y1", y);
+      line1.setAttribute("x2", x + 6); line1.setAttribute("y2", y);
+      line1.setAttribute("stroke", "#ff1a1a"); line1.setAttribute("stroke-width", "1.5");
+      
+      const line2 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line2.setAttribute("x1", x); line2.setAttribute("y1", y - 6);
+      line2.setAttribute("x2", x); line2.setAttribute("y2", y + 6);
+      line2.setAttribute("stroke", "#ff1a1a"); line2.setAttribute("stroke-width", "1.5");
+      
+      crossGroup.appendChild(line1);
+      crossGroup.appendChild(line2);
+      svg.appendChild(crossGroup);
+      
+      shotCount++;
+      shotCountEl.textContent = shotCount;
+    }
+
+    function getOptimalScale() {
+      const targetDiameter = 200; // 7-ring diameter
+      const availWidth = window.innerWidth;
+      const availHeight = window.innerHeight;
+      return Math.min(availWidth, availHeight) / targetDiameter;
+    }
+
+    function applyZoom() {
+      if (isZoomed) {
+        svg.style.transform = `scale(${getOptimalScale()})`;
+        zoomBtn.textContent = 'Zoom Out';
+        zoomBtn.classList.remove('primary');
+      } else {
+        svg.style.transform = 'scale(1)';
+        zoomBtn.textContent = 'Punch In (7-Ring)';
+        zoomBtn.classList.add('primary');
+      }
+    }
+
+    function toggleZoom() {
+      isZoomed = !isZoomed;
+      applyZoom();
+    }
+
+    // Event listeners
+    svg.addEventListener('mousedown', (e) => {
+      const pt = getSVGPoint(e);
+      addCross(pt.x, pt.y);
+    });
+
+    svg.addEventListener('touchstart', (e) => {
+      const now = Date.now();
+      if (now - lastTap < 300) {
+        e.preventDefault();
+        toggleZoom();
+        return;
+      }
+      lastTap = now;
+      e.preventDefault();
+      const pt = getSVGPoint(e);
+      addCross(pt.x, pt.y);
+    }, { passive: false });
+
+    zoomBtn.addEventListener('click', toggleZoom);
+    clearBtn.addEventListener('click', () => {
+      svg.querySelectorAll('.shot-marker').forEach(m => m.remove());
+      shotCount = 0;
+      shotCountEl.textContent = 0;
+    });
+
+    window.addEventListener('resize', () => {
+      if (isZoomed) applyZoom();
+    });
+  </script>
+</body>
+</html>
