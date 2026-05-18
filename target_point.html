@@ -180,10 +180,54 @@
     
     const MARKERS = [];
     let shotCount = 0;
-    let isZoomed = false;
+    let isZoomed = true;
     let draggingMarker = null;
     let dragOffsetX = 0;
     let dragOffsetY = 0;
+    let previewCross = null;
+
+    function createPreviewCross() {
+      previewCross = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      previewCross.setAttribute("pointer-events", "none");
+      previewCross.setAttribute("opacity", "0");
+      
+      const line1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line1.setAttribute("stroke", "#ff1a1a");
+      line1.setAttribute("stroke-width", "1.5");
+      
+      const line2 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line2.setAttribute("stroke", "#ff1a1a");
+      line2.setAttribute("stroke-width", "1.5");
+      
+      previewCross.appendChild(line1);
+      previewCross.appendChild(line2);
+      svg.appendChild(previewCross);
+    }
+
+    function updatePreviewCross(x, y) {
+      if (!previewCross) return;
+      previewCross.setAttribute('transform', `translate(${x}, ${y})`);
+      previewCross.querySelector('line:nth-child(1)').setAttribute('x1', -40);
+      previewCross.querySelector('line:nth-child(1)').setAttribute('y1', 0);
+      previewCross.querySelector('line:nth-child(1)').setAttribute('x2', 40);
+      previewCross.querySelector('line:nth-child(1)').setAttribute('y2', 0);
+      previewCross.querySelector('line:nth-child(2)').setAttribute('x1', 0);
+      previewCross.querySelector('line:nth-child(2)').setAttribute('y1', -40);
+      previewCross.querySelector('line:nth-child(2)').setAttribute('x2', 0);
+      previewCross.querySelector('line:nth-child(2)').setAttribute('y2', 40);
+    }
+
+    function hidePreviewCross() {
+      if (previewCross) {
+        previewCross.setAttribute('opacity', '0');
+      }
+    }
+
+    function showPreviewCross() {
+      if (previewCross) {
+        previewCross.setAttribute('opacity', '0.5');
+      }
+    }
 
     function getSVGPoint(event) {
       const point = svg.createSVGPoint();
@@ -279,15 +323,18 @@
         const pt = getSVGPoint(e);
         dragOffsetX = pt.x - parseFloat(draggingMarker.querySelector('.marker-circle').getAttribute('cx'));
         dragOffsetY = pt.y - parseFloat(draggingMarker.querySelector('.marker-circle').getAttribute('cy'));
+        showPreviewCross();
         e.preventDefault();
         e.stopPropagation();
         return;
       }
       const pt = getSVGPoint(e);
-      const isTouch = true;e.touches && e.touches.length > 0;
+      const isTouch = e.touches && e.touches.length > 0;
       const scale = isZoomed ? 2.75 : 1;
-      const offsetX = isTouch ? -10 / scale : 0;
-      const offsetY = isTouch ? -20 / scale : 0;
+      const offsetX = isTouch ? -20 / scale : 0;
+      const offsetY = isTouch ? -40 / scale : 0;
+      updatePreviewCross(pt.x + offsetX, pt.y + offsetY);
+      showPreviewCross();
       draggingMarker = addMarker(pt.x + offsetX, pt.y + offsetY);
       draggingMarker.classList.add('dragging');
       dragOffsetX = pt.x - draggingMarker.querySelector('.marker-circle').getAttribute('cx');
@@ -308,6 +355,7 @@
       numberText.setAttribute('y', cy - 5);
       const score = calcScore(cx, cy);
       numberText.textContent = score;
+      updatePreviewCross(cx, cy);
     }
 
     function onPointerUp(e) {
@@ -322,6 +370,7 @@
         numberText.textContent = MARKERS.indexOf(group) + 1;
         group.classList.remove('dragging');
         draggingMarker = null;
+        hidePreviewCross();
       }
     }
 
@@ -340,6 +389,9 @@
     });
 
     zoomBtn.addEventListener('pointerup', toggleZoom);
+
+    applyZoom();
+    createPreviewCross();
   </script>
 </body>
 </html>
