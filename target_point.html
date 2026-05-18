@@ -30,9 +30,6 @@
       max-width: 100vw;
       max-height: 100vh;
       cursor: crosshair;
-      transition: transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
-      transform-origin: center center;
-      transform-box: fill-box;
       background: #f5f5f5;
     }
     .ui-overlay {
@@ -189,6 +186,7 @@
     let dragOffsetY = 0;
 
     function getSVGPoint(event) {
+      const point = svg.createSVGPoint();
       let clientX, clientY;
       if (event.touches && event.touches.length > 0) {
         clientX = event.touches[0].clientX;
@@ -197,15 +195,10 @@
         clientX = event.clientX;
         clientY = event.clientY;
       }
-      const baseSize = Math.min(window.innerWidth, window.innerHeight);
-      const scale = isZoomed ? 550 / 200 : 1;
-      const renderedSize = baseSize * scale;
-      const svgLeft = (window.innerWidth - renderedSize) / 2;
-      const svgTop = (window.innerHeight - renderedSize) / 2;
-      return {
-        x: (clientX - svgLeft) * (550 / renderedSize),
-        y: (clientY - svgTop) * (550 / renderedSize)
-      };
+      point.x = clientX;
+      point.y = clientY;
+      const ctm = svg.getScreenCTM().inverse();
+      return point.matrixTransform(ctm);
     }
 
     
@@ -260,17 +253,13 @@
       return group;
     }
 
-    function getOptimalScale() {
-      return 550 / 200;
-    }
-
     function applyZoom() {
       if (isZoomed) {
-        svg.style.transform = `scale(${getOptimalScale()})`;
+        svg.setAttribute('viewBox', '175 175 200 200');
         zoomBtn.textContent = 'Zoom Out';
         zoomBtn.classList.remove('primary');
       } else {
-        svg.style.transform = 'scale(1)';
+        svg.setAttribute('viewBox', '0 0 550 550');
         zoomBtn.textContent = 'Punch In (7-Ring)';
         zoomBtn.classList.add('primary');
       }
@@ -295,7 +284,7 @@
         return;
       }
       const pt = getSVGPoint(e);
-      const isTouch = e.touches && e.touches.length > 0;
+      const isTouch = true;e.touches && e.touches.length > 0;
       const scale = isZoomed ? 2.75 : 1;
       const offsetX = isTouch ? -10 / scale : 0;
       const offsetY = isTouch ? -20 / scale : 0;
@@ -351,10 +340,6 @@
     });
 
     zoomBtn.addEventListener('pointerup', toggleZoom);
-
-    window.addEventListener('resize', () => {
-      if (isZoomed) applyZoom();
-    });
   </script>
 </body>
 </html>
