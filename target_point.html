@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ISSF 25m Target with Punch-In</title>
+  <title>ISSF Target with Punch-In</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -40,22 +40,9 @@
       height: 100%;
       top: 0; left: 0;
     }
-    .status {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      background: rgba(20, 20, 20, 0.85);
-      color: #fff;
-      padding: 8px 18px;
-      border-radius: 20px;
-      font-size: 14px;
-      font-weight: 500;
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255,255,255,0.1);
-    }
     .shot-list {
       position: absolute;
-      top: 65px;
+      top: 20px;
       left: 20px;
       background: rgba(20, 20, 20, 0.85);
       color: #fff;
@@ -65,9 +52,11 @@
       font-family: monospace;
       backdrop-filter: blur(8px);
       border: 1px solid rgba(255,255,255,0.1);
-      max-height: calc(100vh - 2*65px);
+      max-height: calc(100vh - 40px);
       overflow-y: auto;
       min-width: 130px;
+      cursor: pointer;
+      pointer-events: auto;
     }
     .shot-list .shot-row {
       display: flex;
@@ -97,6 +86,28 @@
     .shot-list.hidden {
       display: none;
     }
+    .list-toggle {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 10px;
+      background: rgba(40, 40, 40, 0.9);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.15);
+      user-select: none;
+      display: none;
+      pointer-events: auto;
+    }
+    .list-toggle.visible {
+      display: block;
+      pointer-events: auto;
+    }
     .hint {
       position: absolute;
       top: 65px;
@@ -114,6 +125,23 @@
       display: flex;
       gap: 12px;
       pointer-events: auto;
+    }
+    select {
+      padding: 11px 18px;
+      border: none;
+      border-radius: 10px;
+      background: rgba(40, 40, 40, 0.9);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.15);
+      user-select: none;
+    }
+    select option {
+      background: #222;
+      color: #fff;
     }
     button {
       padding: 11px 18px;
@@ -141,97 +169,138 @@
   <div class="app-wrapper">
     <div class="ui-overlay">
       <div class="shot-list" id="shotList"></div>
+      <button class="list-toggle" id="listToggleBtn">Show List</button>
       <div class="hint">Tap to mark • Button to zoom</div>
       <div class="controls">
-        <button id="zoomBtn" class="primary">Punch In (7-Ring)</button>
+        <select id="targetSelect">
+          <option value="25m">25m Pistol</option>
+          <option value="10m">10m Air Pistol</option>
+        </select>
+        <button id="zoomBtn" class="primary">Punch In</button>
         <button id="clearBtn">Clear Shots</button>
-        <button id="toggleListBtn">Hide List</button>
       </div>
     </div>
-    <svg id="target" viewBox="0 0 550 550" xmlns="http://www.w3.org/2000/svg">
-      <rect width="550" height="550" fill="#FFFFFF"/>
-      <circle cx="275" cy="275" r="100" fill="#000000"/>
-      <g transform="translate(275, 275)">
-        <circle r="250" fill="none" stroke="#000000" stroke-width="0.3"/>
-        <circle r="225" fill="none" stroke="#000000" stroke-width="0.3"/>
-        <circle r="200" fill="none" stroke="#000000" stroke-width="0.3"/>
-        <circle r="175" fill="none" stroke="#000000" stroke-width="0.3"/>
-        <circle r="150" fill="none" stroke="#000000" stroke-width="0.3"/>
-        <circle r="125" fill="none" stroke="#000000" stroke-width="0.3"/>
-        <circle r="100" fill="none" stroke="#000000" stroke-width="0.3"/>
-        <circle r="75" fill="none" stroke="#FFFFFF" stroke-width="0.3"/>
-        <circle r="50" fill="none" stroke="#FFFFFF" stroke-width="0.3"/>
-        <circle r="25" fill="none" stroke="#FFFFFF" stroke-width="0.3"/>
-        <circle r="12.5" fill="none" stroke="#FFFFFF" stroke-width="0.3"/>
-
-        <!-- 12 o'clock -->
-        <text x="0" y="-37.5" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">9</text>
-        <text x="0" y="-62.5" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">8</text>
-        <text x="0" y="-87.5" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">7</text>
-        <text x="0" y="-112.5" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">6</text>
-        <text x="0" y="-137.5" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">5</text>
-        <text x="0" y="-162.5" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">4</text>
-        <text x="0" y="-187.5" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">3</text>
-        <text x="0" y="-212.5" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">2</text>
-        <text x="0" y="-237.5" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">1</text>
-
-        <!-- 3 o'clock -->
-        <text x="37.5" y="0" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">9</text>
-        <text x="62.5" y="0" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">8</text>
-        <text x="87.5" y="0" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">7</text>
-        <text x="112.5" y="0" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">6</text>
-        <text x="137.5" y="0" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">5</text>
-        <text x="162.5" y="0" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">4</text>
-        <text x="187.5" y="0" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">3</text>
-        <text x="212.5" y="0" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">2</text>
-        <text x="237.5" y="0" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">1</text>
-
-        <!-- 6 o'clock -->
-        <text x="0" y="37.5" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">9</text>
-        <text x="0" y="62.5" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">8</text>
-        <text x="0" y="87.5" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">7</text>
-        <text x="0" y="112.5" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">6</text>
-        <text x="0" y="137.5" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">5</text>
-        <text x="0" y="162.5" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">4</text>
-        <text x="0" y="187.5" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">3</text>
-        <text x="0" y="212.5" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">2</text>
-        <text x="0" y="237.5" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">1</text>
-
-        <!-- 9 o'clock -->
-        <text x="-37.5" y="0" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">9</text>
-        <text x="-62.5" y="0" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">8</text>
-        <text x="-87.5" y="0" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">7</text>
-        <text x="-112.5" y="0" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">6</text>
-        <text x="-137.5" y="0" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">5</text>
-        <text x="-162.5" y="0" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">4</text>
-        <text x="-187.5" y="0" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">3</text>
-        <text x="-212.5" y="0" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">2</text>
-        <text x="-237.5" y="0" fill="#000000" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="central">1</text>
-      </g>
-      <g stroke="#FF0000" stroke-width="0.8" fill="none">
-        <line x1="270" y1="15" x2="280" y2="15"/><line x1="275" y1="10" x2="275" y2="20"/>
-        <line x1="270" y1="535" x2="280" y2="535"/><line x1="275" y1="530" x2="275" y2="540"/>
-        <line x1="15" y1="270" x2="15" y2="280"/><line x1="10" y1="275" x2="20" y2="275"/>
-        <line x1="535" y1="270" x2="535" y2="280"/><line x1="530" y1="275" x2="540" y2="275"/>
-      </g>
-    </svg>
+    <svg id="target" xmlns="http://www.w3.org/2000/svg"></svg>
   </div>
 
   <script>
+    const TARGETS = {
+      '25m': {
+        name: '25m',
+        viewBoxSize: 550,
+        center: 275,
+        scale: 1,
+        rings: [250, 225, 200, 175, 150, 125, 100, 75, 50, 25, 12.5],
+        blackZoneRadius: 100,
+        zoomRingRadius: 100,
+        shotRadius: 2.75,
+        numbers: {
+          positions: [
+            { x: 0, y: -37.5, val: 9 }, { x: 0, y: -62.5, val: 8 }, { x: 0, y: -87.5, val: 7 },
+            { x: 0, y: -112.5, val: 6 }, { x: 0, y: -137.5, val: 5 }, { x: 0, y: -162.5, val: 4 },
+            { x: 0, y: -187.5, val: 3 }, { x: 0, y: -212.5, val: 2 }, { x: 0, y: -237.5, val: 1 },
+            { x: 37.5, y: 0, val: 9 }, { x: 62.5, y: 0, val: 8 }, { x: 87.5, y: 0, val: 7 },
+            { x: 112.5, y: 0, val: 6 }, { x: 137.5, y: 0, val: 5 }, { x: 162.5, y: 0, val: 4 },
+            { x: 187.5, y: 0, val: 3 }, { x: 212.5, y: 0, val: 2 }, { x: 237.5, y: 0, val: 1 },
+            { x: 0, y: 37.5, val: 9 }, { x: 0, y: 62.5, val: 8 }, { x: 0, y: 87.5, val: 7 },
+            { x: 0, y: 112.5, val: 6 }, { x: 0, y: 137.5, val: 5 }, { x: 0, y: 162.5, val: 4 },
+            { x: 0, y: 187.5, val: 3 }, { x: 0, y: 212.5, val: 2 }, { x: 0, y: 237.5, val: 1 },
+            { x: -37.5, y: 0, val: 9 }, { x: -62.5, y: 0, val: 8 }, { x: -87.5, y: 0, val: 7 },
+            { x: -112.5, y: 0, val: 6 }, { x: -137.5, y: 0, val: 5 }, { x: -162.5, y: 0, val: 4 },
+            { x: -187.5, y: 0, val: 3 }, { x: -212.5, y: 0, val: 2 }, { x: -237.5, y: 0, val: 1 }
+          ],
+          fontSize: 10
+        }
+      },
+      '10m': {
+        name: '10m',
+        viewBoxSize: 200,
+        center: 100,
+        scale: 200 / 550,
+        rings: [77.75, 69.75, 61.75, 53.75, 45.75, 37.75, 29.75, 21.75, 13.75, 5.75, 2.5],
+        blackZoneRadius: 29.75,
+        zoomRingRadius: 29.75,
+        shotRadius: 2.25,
+        numbers: {
+          positions: [
+            { x: 0, y: -9.75, val: 9 }, { x: 0, y: -17.75, val: 8 }, { x: 0, y: -25.75, val: 7 },
+            { x: 0, y: -33.75, val: 6 }, { x: 0, y: -41.75, val: 5 }, { x: 0, y: -49.75, val: 4 },
+            { x: 0, y: -57.75, val: 3 }, { x: 0, y: -65.75, val: 2 }, { x: 0, y: -73.75, val: 1 },
+            { x: 9.75, y: 0, val: 9 }, { x: 17.75, y: 0, val: 8 }, { x: 25.75, y: 0, val: 7 },
+            { x: 33.75, y: 0, val: 6 }, { x: 41.75, y: 0, val: 5 }, { x: 49.75, y: 0, val: 4 },
+            { x: 57.75, y: 0, val: 3 }, { x: 65.75, y: 0, val: 2 }, { x: 73.75, y: 0, val: 1 },
+            { x: 0, y: 9.75, val: 9 }, { x: 0, y: 17.75, val: 8 }, { x: 0, y: 25.75, val: 7 },
+            { x: 0, y: 33.75, val: 6 }, { x: 0, y: 41.75, val: 5 }, { x: 0, y: 49.75, val: 4 },
+            { x: 0, y: 57.75, val: 3 }, { x: 0, y: 65.75, val: 2 }, { x: 0, y: 73.75, val: 1 },
+            { x: -9.75, y: 0, val: 9 }, { x: -17.75, y: 0, val: 8 }, { x: -25.75, y: 0, val: 7 },
+            { x: -33.75, y: 0, val: 6 }, { x: -41.75, y: 0, val: 5 }, { x: -49.75, y: 0, val: 4 },
+            { x: -57.75, y: 0, val: 3 }, { x: -65.75, y: 0, val: 2 }, { x: -73.75, y: 0, val: 1 }
+          ],
+          fontSize: 8
+        }
+      }
+    };
+
+    let currentTarget = '25m';
+    let TARGET = TARGETS[currentTarget];
+
     const svg = document.getElementById('target');
     const shotListEl = document.getElementById('shotList');
+    const listToggleBtn = document.getElementById('listToggleBtn');
+    const targetSelect = document.getElementById('targetSelect');
     const zoomBtn = document.getElementById('zoomBtn');
     const clearBtn = document.getElementById('clearBtn');
-    const toggleListBtn = document.getElementById('toggleListBtn');
     
-    let listVisible = true;
-    
+    let listVisible = false;
     const MARKERS = [];
     let isZoomed = true;
     let draggingMarker = null;
     let dragOffsetX = 0;
     let dragOffsetY = 0;
     let previewCross = null;
+
+    function buildTarget() {
+      const vb = TARGET.viewBoxSize;
+      const c = TARGET.center;
+      const s = TARGET.scale;
+      svg.setAttribute('viewBox', `0 0 ${vb} ${vb}`);
+      svg.innerHTML = `
+        <rect width="${vb}" height="${vb}" fill="#FFFFFF"/>
+        <circle cx="${c}" cy="${c}" r="${TARGET.blackZoneRadius}" fill="#000000"/>
+        <g transform="translate(${c}, ${c})">
+          ${TARGET.rings.map(r => `<circle r="${r}" fill="none" stroke="${r <= TARGET.blackZoneRadius ? '#FFFFFF' : '#000000'}" stroke-width="${0.3 * s}"/>`).join('')}
+          ${TARGET.numbers.positions.map(p => {
+            const isWhite = p.val >= 7;
+            return `<text x="${p.x}" y="${p.y}" fill="${isWhite ? '#FFFFFF' : '#000000'}" font-family="Arial, sans-serif" font-size="${TARGET.numbers.fontSize * s}" font-weight="bold" text-anchor="middle" dominant-baseline="central">${p.val}</text>`;
+          }).join('')}
+        </g>
+        <g stroke="#FF0000" stroke-width="${0.8 * s}" fill="none">
+          <line x1="${c-5}" y1="15" x2="${c+5}" y2="15"/><line x1="${c}" y1="10" x2="${c}" y2="20"/>
+          <line x1="${c-5}" y1="${vb-15}" x2="${c+5}" y2="${vb-15}"/><line x1="${c}" y1="${vb-10}" x2="${c}" y2="${vb-20}"/>
+          <line x1="15" y1="${c-5}" x2="15" y2="${c+5}"/><line x1="10" y1="${c}" x2="20" y2="${c}"/>
+          <line x1="${vb-15}" y1="${c-5}" x2="${vb-15}" y2="${c+5}"/><line x1="${vb-10}" y1="${c}" x2="${vb-20}" y2="${c}"/>
+        </g>
+      `;
+    }
+
+    function switchTarget(targetKey) {
+      currentTarget = targetKey;
+      TARGET = TARGETS[targetKey];
+      MARKERS.forEach(m => m.remove());
+      MARKERS.length = 0;
+      shotListEl.innerHTML = '';
+      if (previewCross) previewCross.remove();
+      previewCross = null;
+      buildTarget();
+      applyZoom();
+      createPreviewCross();
+    }
+
+    function updateListVisibility() {
+      shotListEl.classList.toggle('hidden', !listVisible);
+      listToggleBtn.classList.toggle('visible', !listVisible);
+      listToggleBtn.textContent = listVisible ? 'Hide List' : 'Show List';
+    }
 
     function createPreviewCross() {
       previewCross = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -240,11 +309,11 @@
       
       const line1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
       line1.setAttribute("stroke", "#ff1a1a");
-      line1.setAttribute("stroke-width", "1.5");
+      line1.setAttribute("stroke-width", TARGET.scale * 1.5);
       
       const line2 = document.createElementNS("http://www.w3.org/2000/svg", "line");
       line2.setAttribute("stroke", "#ff1a1a");
-      line2.setAttribute("stroke-width", "1.5");
+      line2.setAttribute("stroke-width", TARGET.scale * 1.5);
       
       previewCross.appendChild(line1);
       previewCross.appendChild(line2);
@@ -253,27 +322,24 @@
 
     function updatePreviewCross(x, y) {
       if (!previewCross) return;
+      const len = 40 * TARGET.scale;
       previewCross.setAttribute('transform', `translate(${x}, ${y})`);
-      previewCross.querySelector('line:nth-child(1)').setAttribute('x1', -40);
+      previewCross.querySelector('line:nth-child(1)').setAttribute('x1', -len);
       previewCross.querySelector('line:nth-child(1)').setAttribute('y1', 0);
-      previewCross.querySelector('line:nth-child(1)').setAttribute('x2', 40);
+      previewCross.querySelector('line:nth-child(1)').setAttribute('x2', len);
       previewCross.querySelector('line:nth-child(1)').setAttribute('y2', 0);
       previewCross.querySelector('line:nth-child(2)').setAttribute('x1', 0);
-      previewCross.querySelector('line:nth-child(2)').setAttribute('y1', -40);
+      previewCross.querySelector('line:nth-child(2)').setAttribute('y1', -len);
       previewCross.querySelector('line:nth-child(2)').setAttribute('x2', 0);
-      previewCross.querySelector('line:nth-child(2)').setAttribute('y2', 40);
+      previewCross.querySelector('line:nth-child(2)').setAttribute('y2', len);
     }
 
     function hidePreviewCross() {
-      if (previewCross) {
-        previewCross.setAttribute('opacity', '0');
-      }
+      if (previewCross) previewCross.setAttribute('opacity', '0');
     }
 
     function showPreviewCross() {
-      if (previewCross) {
-        previewCross.setAttribute('opacity', '0.5');
-      }
+      if (previewCross) previewCross.setAttribute('opacity', '0.5');
     }
 
     function updateShotList() {
@@ -286,9 +352,9 @@
         const circle = group.querySelector('.marker-circle');
         const cx = parseFloat(circle.getAttribute('cx'));
         const cy = parseFloat(circle.getAttribute('cy'));
-        const dx = cx - 275;
-        const dy = cy - 275;
-        const d = Math.sqrt(dx * dx + dy * dy) - 2.75;
+        const dx = cx - TARGET.center;
+        const dy = cy - TARGET.center;
+        const d = Math.sqrt(dx * dx + dy * dy) - TARGET.shotRadius;
         const score = calcScoreForDist(d);
         const intScore = Math.floor(score);
         total += score;
@@ -309,16 +375,17 @@
 
     function calcScoreForDist(d) {
       if (d <= 0) return 10.9;
-      if (d <= 25) return +(10.9 - (d + 2.75) / 27.75 * 0.9).toFixed(1);
-      if (d <= 50) return +(9.9 - (d - 25) / 25 * 0.9).toFixed(1);
-      if (d <= 75) return +(8.9 - (d - 50) / 25 * 0.9).toFixed(1);
-      if (d <= 100) return +(7.9 - (d - 75) / 25 * 0.9).toFixed(1);
-      if (d <= 125) return +(6.9 - (d - 100) / 25 * 0.9).toFixed(1);
-      if (d <= 150) return +(5.9 - (d - 125) / 25 * 0.9).toFixed(1);
-      if (d <= 175) return +(4.9 - (d - 150) / 25 * 0.9).toFixed(1);
-      if (d <= 200) return +(3.9 - (d - 175) / 25 * 0.9).toFixed(1);
-      if (d <= 225) return +(2.9 - (d - 200) / 25 * 0.9).toFixed(1);
-      if (d <= 250) return +(1.9 - (d - 225) / 25 * 0.9).toFixed(1);
+      const ringRadii = TARGET.rings;
+      const shotR = TARGET.shotRadius;
+      if (d <= ringRadii[9]) return +(10.9 - (d + shotR) / (ringRadii[9] + shotR) * 0.9).toFixed(1);
+      for (let i = 9; i >= 1; i--) {
+        const outerR = ringRadii[i - 1];
+        const innerR = ringRadii[i];
+        if (d <= outerR) {
+          const baseScore = i;
+          return +((baseScore + 0.9) - (d - innerR) / (outerR - innerR) * 0.9).toFixed(1);
+        }
+      }
       return 0;
     }
 
@@ -338,24 +405,11 @@
       return point.matrixTransform(ctm);
     }
 
-    
-
     function calcScore(x, y) {
-      const dx = x - 275;
-      const dy = y - 275;
-      const d = Math.sqrt(dx * dx + dy * dy) - 2.75;
-      if (d <= 0) return 10.9;
-      if (d <= 25) return +(10.9 - (d + 2.75) / 27.75 * 0.9).toFixed(1);
-      if (d <= 50) return +(9.9 - (d - 25) / 25 * 0.9).toFixed(1);
-      if (d <= 75) return +(8.9 - (d - 50) / 25 * 0.9).toFixed(1);
-      if (d <= 100) return +(7.9 - (d - 75) / 25 * 0.9).toFixed(1);
-      if (d <= 125) return +(6.9 - (d - 100) / 25 * 0.9).toFixed(1);
-      if (d <= 150) return +(5.9 - (d - 125) / 25 * 0.9).toFixed(1);
-      if (d <= 175) return +(4.9 - (d - 150) / 25 * 0.9).toFixed(1);
-      if (d <= 200) return +(3.9 - (d - 175) / 25 * 0.9).toFixed(1);
-      if (d <= 225) return +(2.9 - (d - 200) / 25 * 0.9).toFixed(1);
-      if (d <= 250) return +(1.9 - (d - 225) / 25 * 0.9).toFixed(1);
-      return 0;
+      const dx = x - TARGET.center;
+      const dy = y - TARGET.center;
+      const d = Math.sqrt(dx * dx + dy * dy) - TARGET.shotRadius;
+      return calcScoreForDist(d);
     }
 
     function addMarker(x, y) {
@@ -365,23 +419,37 @@
       const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       circle.setAttribute("cx", x);
       circle.setAttribute("cy", y);
-      circle.setAttribute("r", "2.75");
+      circle.setAttribute("r", TARGET.shotRadius);
       circle.setAttribute("fill", "rgba(255, 26, 26, 0.7)");
       circle.setAttribute("class", "marker-circle");
       
       const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
       text.setAttribute("x", x);
-      text.setAttribute("y", y - 5);
+      text.setAttribute("y", y);
       text.setAttribute("text-anchor", "middle");
-      text.setAttribute("font-size", "4");
+      text.setAttribute("dominant-baseline", "central");
+      text.setAttribute("font-size", 4 * TARGET.scale);
       text.setAttribute("font-family", "system-ui, sans-serif");
       text.setAttribute("font-weight", "bold");
-      text.setAttribute("fill", "#ff1a1a");
+      text.setAttribute("fill", "#ffffff");
       text.setAttribute("class", "marker-number");
       text.textContent = MARKERS.length + 1;
       
+      const scoreText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      scoreText.setAttribute("x", x - 6 * TARGET.scale);
+      scoreText.setAttribute("y", y + 1.5 * TARGET.scale);
+      scoreText.setAttribute("text-anchor", "end");
+      scoreText.setAttribute("dominant-baseline", "central");
+      scoreText.setAttribute("font-size", 5 * TARGET.scale);
+      scoreText.setAttribute("font-family", "system-ui, sans-serif");
+      scoreText.setAttribute("font-weight", "bold");
+      scoreText.setAttribute("fill", "#ff1a1a");
+      scoreText.setAttribute("class", "marker-score");
+      scoreText.setAttribute("opacity", "0");
+      
       group.appendChild(circle);
       group.appendChild(text);
+      group.appendChild(scoreText);
       svg.appendChild(group);
       
       MARKERS.push(group);
@@ -390,13 +458,16 @@
     }
 
     function applyZoom() {
+      const vb = TARGET.viewBoxSize;
+      const c = TARGET.center;
+      const zr = TARGET.zoomRingRadius;
       if (isZoomed) {
-        svg.setAttribute('viewBox', '175 175 200 200');
+        svg.setAttribute('viewBox', `${c - zr} ${c - zr} ${zr * 2} ${zr * 2}`);
         zoomBtn.textContent = 'Zoom Out';
         zoomBtn.classList.remove('primary');
       } else {
-        svg.setAttribute('viewBox', '0 0 550 550');
-        zoomBtn.textContent = 'Punch In (7-Ring)';
+        svg.setAttribute('viewBox', `0 0 ${vb} ${vb}`);
+        zoomBtn.textContent = 'Punch In';
         zoomBtn.classList.add('primary');
       }
     }
@@ -423,8 +494,8 @@
       const pt = getSVGPoint(e);
       const isTouch = e.touches && e.touches.length > 0;
       const scale = isZoomed ? 2.75 : 1;
-      const offsetX = isTouch ? -20 / scale : 0;
-      const offsetY = isTouch ? -40 / scale : 0;
+      const offsetX = isTouch ? -20 * TARGET.scale / scale : 0;
+      const offsetY = isTouch ? -40 * TARGET.scale / scale : 0;
       updatePreviewCross(pt.x + offsetX, pt.y + offsetY);
       showPreviewCross();
       draggingMarker = addMarker(pt.x + offsetX, pt.y + offsetY);
@@ -444,9 +515,13 @@
       draggingMarker.querySelector('.marker-circle').setAttribute('cy', cy);
       const numberText = draggingMarker.querySelector('.marker-number');
       numberText.setAttribute('x', cx);
-      numberText.setAttribute('y', cy - 5);
+      numberText.setAttribute('y', cy);
       const score = calcScore(cx, cy);
-      numberText.textContent = score;
+      const scoreText = draggingMarker.querySelector('.marker-score');
+      scoreText.textContent = score;
+      scoreText.setAttribute('x', cx - 4 * TARGET.scale);
+      scoreText.setAttribute('y', cy - 6 * TARGET.scale);
+      scoreText.setAttribute('opacity', '1');
       updatePreviewCross(cx, cy);
       updateShotList();
     }
@@ -459,8 +534,12 @@
         const cx = parseFloat(circle.getAttribute('cx'));
         const cy = parseFloat(circle.getAttribute('cy'));
         numberText.setAttribute('x', cx);
-        numberText.setAttribute('y', cy - 5);
+        numberText.setAttribute('y', cy);
         numberText.textContent = MARKERS.indexOf(group) + 1;
+        const scoreText = group.querySelector('.marker-score');
+        scoreText.setAttribute('opacity', '0');
+        scoreText.setAttribute('x', cx - 6 * TARGET.scale);
+        scoreText.setAttribute('y', cy + 1.5 * TARGET.scale);
         group.classList.remove('dragging');
         draggingMarker = null;
         hidePreviewCross();
@@ -483,14 +562,25 @@
 
     zoomBtn.addEventListener('pointerup', toggleZoom);
 
-    toggleListBtn.addEventListener('pointerup', () => {
-      listVisible = !listVisible;
-      shotListEl.classList.toggle('hidden', !listVisible);
-      toggleListBtn.textContent = listVisible ? 'Hide List' : 'Show List';
-    });
-
+    buildTarget();
     applyZoom();
     createPreviewCross();
+    targetSelect.value = currentTarget;
+    updateListVisibility();
+
+    shotListEl.addEventListener('click', () => {
+      listVisible = false;
+      updateListVisibility();
+    });
+
+    listToggleBtn.addEventListener('pointerup', () => {
+      listVisible = true;
+      updateListVisibility();
+    });
+
+    targetSelect.addEventListener('change', (e) => {
+      switchTarget(e.target.value);
+    });
   </script>
 </body>
 </html>
