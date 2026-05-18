@@ -108,15 +108,21 @@
       display: block;
       pointer-events: auto;
     }
-    .hint {
+.hint {
       position: absolute;
-      top: 65px;
+      top: 50%;
       left: 50%;
-      transform: translateX(-50%);
-      color: #888;
-      font-size: 12px;
+      transform: translate(-50%, -50%);
+      color: #ff1a1a;
+      font-size: 28px;
+      font-weight: bold;
       text-align: center;
       white-space: nowrap;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .hint.hidden {
+      opacity: 0;
     }
     .controls {
       position: absolute;
@@ -170,7 +176,7 @@
     <div class="ui-overlay">
       <div class="shot-list" id="shotList"></div>
       <button class="list-toggle" id="listToggleBtn">Show List</button>
-      <div class="hint">Tap to mark • Button to zoom</div>
+      <div class="hint" id="hint">Tap to mark</div>
       <div class="controls">
         <select id="targetSelect">
           <option value="25m">25m Pistol</option>
@@ -245,6 +251,7 @@
     let TARGET = TARGETS[currentTarget];
 
     const svg = document.getElementById('target');
+    const hintEl = document.getElementById('hint');
     const shotListEl = document.getElementById('shotList');
     const listToggleBtn = document.getElementById('listToggleBtn');
     const targetSelect = document.getElementById('targetSelect');
@@ -253,6 +260,10 @@
     
     let listVisible = false;
     const MARKERS = [];
+    
+    function hideHint() {
+      hintEl.style.display = 'none';
+    }
     let isZoomed = true;
     let draggingMarker = null;
     let dragOffsetX = 0;
@@ -289,6 +300,7 @@
       MARKERS.forEach(m => m.remove());
       MARKERS.length = 0;
       shotListEl.innerHTML = '';
+      hintEl.style.display = '';
       if (previewCross) previewCross.remove();
       previewCross = null;
       buildTarget();
@@ -307,31 +319,29 @@
       previewCross.setAttribute("pointer-events", "none");
       previewCross.setAttribute("opacity", "0");
       
-      const line1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
-      line1.setAttribute("stroke", "#ff1a1a");
-      line1.setAttribute("stroke-width", TARGET.scale * 1.5);
-      
-      const line2 = document.createElementNS("http://www.w3.org/2000/svg", "line");
-      line2.setAttribute("stroke", "#ff1a1a");
-      line2.setAttribute("stroke-width", TARGET.scale * 1.5);
-      
-      previewCross.appendChild(line1);
-      previewCross.appendChild(line2);
+      for (let i = 0; i < 4; i++) {
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("stroke", "#ff1a1a");
+        line.setAttribute("stroke-width", TARGET.scale * 1.5);
+        previewCross.appendChild(line);
+      }
       svg.appendChild(previewCross);
     }
 
     function updatePreviewCross(x, y) {
       if (!previewCross) return;
-      const len = 40 * TARGET.scale;
+      const len = 30 * TARGET.scale;
+      const gap = 8 * TARGET.scale;
       previewCross.setAttribute('transform', `translate(${x}, ${y})`);
-      previewCross.querySelector('line:nth-child(1)').setAttribute('x1', -len);
-      previewCross.querySelector('line:nth-child(1)').setAttribute('y1', 0);
-      previewCross.querySelector('line:nth-child(1)').setAttribute('x2', len);
-      previewCross.querySelector('line:nth-child(1)').setAttribute('y2', 0);
-      previewCross.querySelector('line:nth-child(2)').setAttribute('x1', 0);
-      previewCross.querySelector('line:nth-child(2)').setAttribute('y1', -len);
-      previewCross.querySelector('line:nth-child(2)').setAttribute('x2', 0);
-      previewCross.querySelector('line:nth-child(2)').setAttribute('y2', len);
+      const lines = previewCross.querySelectorAll('line');
+      lines[0].setAttribute('x1', -len); lines[0].setAttribute('y1', 0);
+      lines[0].setAttribute('x2', -gap); lines[0].setAttribute('y2', 0);
+      lines[1].setAttribute('x1', gap); lines[1].setAttribute('y1', 0);
+      lines[1].setAttribute('x2', len); lines[1].setAttribute('y2', 0);
+      lines[2].setAttribute('x1', 0); lines[2].setAttribute('y1', -len);
+      lines[2].setAttribute('x2', 0); lines[2].setAttribute('y2', -gap);
+      lines[3].setAttribute('x1', 0); lines[3].setAttribute('y1', gap);
+      lines[3].setAttribute('x2', 0); lines[3].setAttribute('y2', len);
     }
 
     function hidePreviewCross() {
@@ -435,8 +445,8 @@
       text.textContent = MARKERS.length + 1;
       
       const scoreText = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      scoreText.setAttribute("x", x - 6 * TARGET.scale);
-      scoreText.setAttribute("y", y + 1.5 * TARGET.scale);
+      scoreText.setAttribute("x", x - 4 * TARGET.scale);
+      scoreText.setAttribute("y", y - 6 * TARGET.scale);
       scoreText.setAttribute("text-anchor", "end");
       scoreText.setAttribute("dominant-baseline", "central");
       scoreText.setAttribute("font-size", 5 * TARGET.scale);
@@ -453,6 +463,7 @@
       
       MARKERS.push(group);
       updateShotList();
+      hideHint();
       return group;
     }
 
@@ -515,9 +526,9 @@
       const numberText = draggingMarker.querySelector('.marker-number');
       numberText.setAttribute('x', cx);
       numberText.setAttribute('y', cy);
-      const score = calcScore(cx, cy);
+const score = calcScore(cx, cy);
       const scoreText = draggingMarker.querySelector('.marker-score');
-      scoreText.textContent = score;
+      scoreText.textContent = score.toFixed(1);
       scoreText.setAttribute('x', cx - 4 * TARGET.scale);
       scoreText.setAttribute('y', cy - 6 * TARGET.scale);
       scoreText.setAttribute('opacity', '1');
