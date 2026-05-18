@@ -57,7 +57,7 @@
       backdrop-filter: blur(8px);
       border: 1px solid rgba(255,255,255,0.1);
     }
-    .hint {
+      .hint {
       position: absolute;
       top: 65px;
       left: 50%;
@@ -67,9 +67,9 @@
       text-align: center;
       white-space: nowrap;
     }
-    .controls {
+     .controls {
       position: absolute;
-      bottom: 25px;
+      bottom: 50px;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
@@ -94,14 +94,15 @@
     button:active { transform: scale(0.96); }
     button.primary { background: rgba(0, 100, 255, 0.85); border-color: rgba(0, 100, 255, 0.6); }
     button.primary:hover { background: rgba(0, 80, 200, 0.95); }
-    .shot-marker { pointer-events: none; }
+    .shot-marker { pointer-events: all; cursor: grab; }
+    .shot-marker.dragging { cursor: grabbing; }
   </style>
 </head>
 <body>
   <div class="app-wrapper">
     <div class="ui-overlay">
       <div class="status">Shots: <span id="shotCount">0</span></div>
-      <div class="hint">Tap to mark • Double-tap or button to zoom</div>
+      <div class="hint">Tap to mark • Button to zoom</div>
       <div class="controls">
         <button id="zoomBtn" class="primary">Punch In (7-Ring)</button>
         <button id="clearBtn">Clear Shots</button>
@@ -182,11 +183,13 @@
     const zoomBtn = document.getElementById('zoomBtn');
     const clearBtn = document.getElementById('clearBtn');
     
+    const MARKERS = [];
     let shotCount = 0;
     let isZoomed = false;
-    let lastTap = 0;
+    let draggingMarker = null;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
 
-    // Robust coordinate mapping using SVG's native transformation matrix
     function getSVGPoint(event) {
       const point = svg.createSVGPoint();
       let clientX, clientY;
@@ -199,39 +202,72 @@
       }
       point.x = clientX;
       point.y = clientY;
-      
-      // Get the combined matrix (viewBox + CSS transforms + screen DPI)
       const ctm = svg.getScreenCTM().inverse();
       return point.matrixTransform(ctm);
     }
 
-    function addCross(x, y) {
-      const crossGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-      crossGroup.setAttribute("class", "shot-marker");
+    function getTouchOffset(e) {
+      if (!e.touches || e.touches.length === 0) return { x: 0, y: 0 };
+      const point = svg.createSVGPoint();
+      point.x = e.touches[0].clientX - 30;
+      point.y = e.touches[0].clientY - 60;
+      const ctm = svg.getScreenCTM().inverse();
+      const offset = point.matrixTransform(ctm);
+      return { x: offset.x - e.touches[0].clientX, y: offset.y - e.touches[0].clientY };
+    }
+
+    function calcScore(x, y) {
+      const dx = x - 275;
+      const dy = y - 275;
+      const d = Math.sqrt(dx * dx + dy * dy) - 2.75;
+      if (d <= 0) return 10.9;
+      if (d <= 25) return +(10.9 - d / 25 * 0.9).toFixed(1);
+      if (d <= 50) return +(9.9 - (d - 25) / 25 * 0.9).toFixed(1);
+      if (d <= 75) return +(8.9 - (d - 50) / 25 * 0.9).toFixed(1);
+      if (d <= 100) return +(7.9 - (d - 75) / 25 * 0.9).toFixed(1);
+      if (d <= 125) return +(6.9 - (d - 100) / 25 * 0.9).toFixed(1);
+      if (d <= 150) return +(5.9 - (d - 125) / 25 * 0.9).toFixed(1);
+      if (d <= 175) return +(4.9 - (d - 150) / 25 * 0.9).toFixed(1);
+      if (d <= 200) return +(3.9 - (d - 175) / 25 * 0.9).toFixed(1);
+      if (d <= 225) return +(2.9 - (d - 200) / 25 * 0.9).toFixed(1);
+      if (d <= 250) return +(1.9 - (d - 225) / 25 * 0.9).toFixed(1);
+      return 0;
+    }
+
+    function addMarker(x, y) {
+      const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      group.setAttribute("class", "shot-marker");
       
-      const line1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
-      line1.setAttribute("x1", x - 6); line1.setAttribute("y1", y);
-      line1.setAttribute("x2", x + 6); line1.setAttribute("y2", y);
-      line1.setAttribute("stroke", "#ff1a1a"); line1.setAttribute("stroke-width", "1.5");
+      const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      circle.setAttribute("cx", x);
+      circle.setAttribute("cy", y);
+      circle.setAttribute("r", "2.75");
+      circle.setAttribute("fill", "rgba(255, 26, 26, 0.7)");
+      circle.setAttribute("class", "marker-circle");
       
-      const line2 = document.createElementNS("http://www.w3.org/2000/svg", "line");
-      line2.setAttribute("x1", x); line2.setAttribute("y1", y - 6);
-      line2.setAttribute("x2", x); line2.setAttribute("y2", y + 6);
-      line2.setAttribute("stroke", "#ff1a1a"); line2.setAttribute("stroke-width", "1.5");
+      const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      text.setAttribute("x", x);
+      text.setAttribute("y", y - 5);
+      text.setAttribute("text-anchor", "middle");
+      text.setAttribute("font-size", "4");
+      text.setAttribute("font-family", "system-ui, sans-serif");
+      text.setAttribute("font-weight", "bold");
+      text.setAttribute("fill", "#ff1a1a");
+      text.setAttribute("class", "marker-number");
+      text.textContent = shotCount + 1;
       
-      crossGroup.appendChild(line1);
-      crossGroup.appendChild(line2);
-      svg.appendChild(crossGroup);
+      group.appendChild(circle);
+      group.appendChild(text);
+      svg.appendChild(group);
       
       shotCount++;
       shotCountEl.textContent = shotCount;
+      MARKERS.push(group);
+      return group;
     }
 
     function getOptimalScale() {
-      const targetDiameter = 200; // 7-ring diameter
-      const availWidth = window.innerWidth;
-      const availHeight = window.innerHeight;
-      return Math.min(availWidth, availHeight) / targetDiameter;
+      return 550 / 200;
     }
 
     function applyZoom() {
@@ -251,31 +287,73 @@
       applyZoom();
     }
 
-    // Event listeners
-    svg.addEventListener('mousedown', (e) => {
-      const pt = getSVGPoint(e);
-      addCross(pt.x, pt.y);
-    });
-
-    svg.addEventListener('touchstart', (e) => {
-      const now = Date.now();
-      if (now - lastTap < 300) {
+    function onPointerDown(e) {
+      const target = e.target;
+      if (target.classList.contains('shot-marker') || target.closest('.shot-marker')) {
+        const group = target.classList.contains('shot-marker') ? target : target.closest('.shot-marker');
+        draggingMarker = group;
+        draggingMarker.classList.add('dragging');
+        const pt = getSVGPoint(e);
+        dragOffsetX = pt.x - parseFloat(draggingMarker.querySelector('.marker-circle').getAttribute('cx'));
+        dragOffsetY = pt.y - parseFloat(draggingMarker.querySelector('.marker-circle').getAttribute('cy'));
         e.preventDefault();
-        toggleZoom();
+        e.stopPropagation();
         return;
       }
-      lastTap = now;
+      const pt = getSVGPoint(e);
+      const offset = getTouchOffset(e);
+      draggingMarker = addMarker(pt.x + offset.x, pt.y + offset.y);
+      draggingMarker.classList.add('dragging');
+      dragOffsetX = pt.x - draggingMarker.querySelector('.marker-circle').getAttribute('cx');
+      dragOffsetY = pt.y - draggingMarker.querySelector('.marker-circle').getAttribute('cy');
+      e.preventDefault();
+    }
+
+    function onPointerMove(e) {
+      if (!draggingMarker) return;
       e.preventDefault();
       const pt = getSVGPoint(e);
-      addCross(pt.x, pt.y);
-    }, { passive: false });
+      const cx = pt.x - dragOffsetX;
+      const cy = pt.y - dragOffsetY;
+      draggingMarker.querySelector('.marker-circle').setAttribute('cx', cx);
+      draggingMarker.querySelector('.marker-circle').setAttribute('cy', cy);
+      const numberText = draggingMarker.querySelector('.marker-number');
+      numberText.setAttribute('x', cx);
+      numberText.setAttribute('y', cy - 5);
+      const score = calcScore(cx, cy);
+      numberText.textContent = score;
+    }
 
-    zoomBtn.addEventListener('pointerup', toggleZoom);
+    function onPointerUp(e) {
+      if (draggingMarker) {
+        const group = draggingMarker;
+        const numberText = group.querySelector('.marker-number');
+        const circle = group.querySelector('.marker-circle');
+        const cx = parseFloat(circle.getAttribute('cx'));
+        const cy = parseFloat(circle.getAttribute('cy'));
+        numberText.setAttribute('x', cx);
+        numberText.setAttribute('y', cy - 5);
+        numberText.textContent = MARKERS.indexOf(group) + 1;
+        group.classList.remove('dragging');
+        draggingMarker = null;
+      }
+    }
+
+    svg.addEventListener('mousedown', onPointerDown);
+    svg.addEventListener('touchstart', onPointerDown, { passive: false });
+    svg.addEventListener('mousemove', onPointerMove);
+    svg.addEventListener('touchmove', onPointerMove, { passive: false });
+    window.addEventListener('mouseup', onPointerUp);
+    window.addEventListener('touchend', onPointerUp);
+
     clearBtn.addEventListener('pointerup', () => {
-      svg.querySelectorAll('.shot-marker').forEach(m => m.remove());
+      MARKERS.forEach(m => m.remove());
+      MARKERS.length = 0;
       shotCount = 0;
       shotCountEl.textContent = 0;
     });
+
+    zoomBtn.addEventListener('pointerup', toggleZoom);
 
     window.addEventListener('resize', () => {
       if (isZoomed) applyZoom();
