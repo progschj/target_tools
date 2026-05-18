@@ -17,9 +17,9 @@
       touch-action: none;
     }
     .app-wrapper {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
+      position: fixed;
+      width: 100dvw;
+      height: 100dvh;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -270,8 +270,8 @@
       addCross(pt.x, pt.y);
     }, { passive: false });
 
-    zoomBtn.addEventListener('click', toggleZoom);
-    clearBtn.addEventListener('click', () => {
+    zoomBtn.addEventListener('pointerup', toggleZoom);
+    clearBtn.addEventListener('pointerup', () => {
       svg.querySelectorAll('.shot-marker').forEach(m => m.remove());
       shotCount = 0;
       shotCountEl.textContent = 0;
