@@ -176,7 +176,7 @@
           <option value="25m">25m Pistol</option>
           <option value="10m">10m Air Pistol</option>
         </select>
-        <button id="zoomBtn" class="primary">Punch In</button>
+        <button id="zoomBtn" class="primary">Zoom In</button>
         <button id="clearBtn">Clear Shots</button>
       </div>
     </div>
@@ -374,7 +374,6 @@
     }
 
     function calcScoreForDist(d) {
-      if (d <= 0) return 10.9;
       const ringRadii = TARGET.rings;
       const shotR = TARGET.shotRadius;
       if (d <= ringRadii[9]) return +(10.9 - (d + shotR) / (ringRadii[9] + shotR) * 0.9).toFixed(1);
@@ -467,7 +466,7 @@
         zoomBtn.classList.remove('primary');
       } else {
         svg.setAttribute('viewBox', `0 0 ${vb} ${vb}`);
-        zoomBtn.textContent = 'Punch In';
+        zoomBtn.textContent = 'Zoom In';
         zoomBtn.classList.add('primary');
       }
     }
