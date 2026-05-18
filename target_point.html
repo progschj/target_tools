@@ -206,8 +206,18 @@
       return point.matrixTransform(ctm);
     }
 
-    const TOUCH_OFFSET_X = -10;
-    const TOUCH_OFFSET_Y = -10;
+    function getTouchOffset(e) {
+      if (!e.touches || e.touches.length === 0) return { x: 0, y: 0 };
+      const ctm = svg.getScreenCTM().inverse();
+      const pt = svg.createSVGPoint();
+      pt.x = e.touches[0].clientX - 20;
+      pt.y = e.touches[0].clientY - 40;
+      const off = pt.matrixTransform(ctm);
+      pt.x = e.touches[0].clientX;
+      pt.y = e.touches[0].clientY;
+      const center = pt.matrixTransform(ctm);
+      return { x: off.x - center.x, y: off.y - center.y };
+    }
 
     function calcScore(x, y) {
       const dx = x - 275;
@@ -294,8 +304,8 @@
         return;
       }
       const pt = getSVGPoint(e);
-      const isTouch = e.touches && e.touches.length > 0;
-      draggingMarker = addMarker(pt.x + (isTouch ? TOUCH_OFFSET_X : 0), pt.y + (isTouch ? TOUCH_OFFSET_Y : 0));
+      const offset = getTouchOffset(e);
+      draggingMarker = addMarker(pt.x + offset.x, pt.y + offset.y);
       draggingMarker.classList.add('dragging');
       dragOffsetX = pt.x - draggingMarker.querySelector('.marker-circle').getAttribute('cx');
       dragOffsetY = pt.y - draggingMarker.querySelector('.marker-circle').getAttribute('cy');
