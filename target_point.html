@@ -208,10 +208,7 @@
       };
     }
 
-    function getTouchOffset(e) {
-      if (!e.touches || e.touches.length === 0) return { x: 0, y: 0 };
-      return { x: -10 / (isZoomed ? 2.75 : 1), y: -10 / (isZoomed ? 2.75 : 1) };
-    }
+    
 
     function calcScore(x, y) {
       const dx = x - 275;
@@ -298,8 +295,11 @@
         return;
       }
       const pt = getSVGPoint(e);
-      const offset = getTouchOffset(e);
-      draggingMarker = addMarker(pt.x + offset.x, pt.y + offset.y);
+      const isTouch = e.touches && e.touches.length > 0;
+      const scale = isZoomed ? 2.75 : 1;
+      const offsetX = isTouch ? -10 / scale : 0;
+      const offsetY = isTouch ? -20 / scale : 0;
+      draggingMarker = addMarker(pt.x + offsetX, pt.y + offsetY);
       draggingMarker.classList.add('dragging');
       dragOffsetX = pt.x - draggingMarker.querySelector('.marker-circle').getAttribute('cx');
       dragOffsetY = pt.y - draggingMarker.querySelector('.marker-circle').getAttribute('cy');
