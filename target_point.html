@@ -209,8 +209,8 @@
     function getTouchOffset(e) {
       if (!e.touches || e.touches.length === 0) return { x: 0, y: 0 };
       const point = svg.createSVGPoint();
-      point.x = e.touches[0].clientX - 30;
-      point.y = e.touches[0].clientY - 60;
+      point.x = e.touches[0].clientX - 10;
+      point.y = e.touches[0].clientY - 10;
       const ctm = svg.getScreenCTM().inverse();
       const offset = point.matrixTransform(ctm);
       return { x: offset.x - e.touches[0].clientX, y: offset.y - e.touches[0].clientY };
@@ -221,7 +221,7 @@
       const dy = y - 275;
       const d = Math.sqrt(dx * dx + dy * dy) - 2.75;
       if (d <= 0) return 10.9;
-      if (d <= 25) return +(10.9 - d / 25 * 0.9).toFixed(1);
+      if (d <= 25) return +(10.9 - (d + 2.75) / 27.75 * 0.9).toFixed(1);
       if (d <= 50) return +(9.9 - (d - 25) / 25 * 0.9).toFixed(1);
       if (d <= 75) return +(8.9 - (d - 50) / 25 * 0.9).toFixed(1);
       if (d <= 100) return +(7.9 - (d - 75) / 25 * 0.9).toFixed(1);
