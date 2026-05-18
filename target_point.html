@@ -189,7 +189,6 @@
     let dragOffsetY = 0;
 
     function getSVGPoint(event) {
-      const point = svg.createSVGPoint();
       let clientX, clientY;
       if (event.touches && event.touches.length > 0) {
         clientX = event.touches[0].clientX;
@@ -198,10 +197,15 @@
         clientX = event.clientX;
         clientY = event.clientY;
       }
-      point.x = clientX;
-      point.y = clientY;
-      const ctm = svg.getScreenCTM().inverse();
-      return point.matrixTransform(ctm);
+      const baseSize = Math.min(window.innerWidth, window.innerHeight);
+      const scale = isZoomed ? 550 / 200 : 1;
+      const renderedSize = baseSize * scale;
+      const svgLeft = (window.innerWidth - renderedSize) / 2;
+      const svgTop = (window.innerHeight - renderedSize) / 2;
+      return {
+        x: (clientX - svgLeft) * (550 / renderedSize),
+        y: (clientY - svgTop) * (550 / renderedSize)
+      };
     }
 
     function getTouchOffset(e) {
