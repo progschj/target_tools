@@ -214,7 +214,11 @@
       pt.x = e.touches[0].clientX;
       pt.y = e.touches[0].clientY;
       const center = pt.matrixTransform(ctm);
-      return { x: off.x - center.x, y: off.y - center.y };
+      let scale = 1;
+      const computed = window.getComputedStyle(svg);
+      const matrix = new DOMMatrix(computed.transform);
+      if (matrix.a !== 1) scale = matrix.a;
+      return { x: (off.x - center.x) / scale, y: (off.y - center.y) / scale };
     }
 
     function calcScore(x, y) {
